@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:sightmate/core/service/speech_service.dart';
+import 'package:sightmate/features/speech/domains/speech_message.dart';
 
 import '../../../components/camera_icon_button.dart';
 
@@ -16,6 +18,7 @@ class _CameraScreenState extends State<CameraScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
   List<CameraDescription> _cameras = [];
+  final SpeechService _speechService = SpeechService.instance;
 
   XFile? _photo;
   String? _error;
@@ -28,8 +31,14 @@ class _CameraScreenState extends State<CameraScreen>
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addObserver(this);
+
     _loadCameras();
+
+    _speechService.initialize().catchError((Object error) {
+      debugPrint('SightMate speech initialization: $error');
+    });
   }
 
   Future<void> _loadCameras() async {
@@ -122,12 +131,15 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   Future<void> _capture() async {
+    // Lorsque la photo est déjà affichée,
+    // permettre de revenir à la caméra.
     if (_photo != null) {
       setState(() => _photo = null);
       return;
     }
 
     final camera = _controller;
+
     if (camera == null || !camera.value.isInitialized || _capturing) {
       return;
     }
@@ -136,12 +148,40 @@ class _CameraScreenState extends State<CameraScreen>
 
     try {
       final photo = await camera.takePicture();
+
       if (!mounted) return;
 
-      setState(() => _photo = photo);
-    } catch (e) {
+      setState(() {
+        _photo = photo;
+        _capturing = false;
+      });
+
+      // Annonce dans la langue sélectionnée.
+      final message = SpeechMessages.photoCaptured(_speechService.language);
+
+      // Le TTS n'est pas nécessaire pour réussir la capture.
+      // Il possède donc sa propre gestion d'erreur.
+      try {
+        await _speechService.speak(message);
+      } catch (error) {
+        debugPrint('SightMate TTS error: $error');
+      }
+    } catch (error) {
+      debugPrint('SightMate capture error: $error');
+
       if (!mounted) return;
-      _showMessage('La capture a échoué : $e');
+
+      _showMessage('Impossible de prendre la photo.');
+
+      try {
+        await _speechService.initialize();
+
+        await _speechService.speak(
+          SpeechMessages.captureFailed(_speechService.language),
+        );
+      } catch (speechError) {
+        debugPrint('SightMate speech error: $speechError');
+      }
     } finally {
       if (mounted) {
         setState(() => _capturing = false);
