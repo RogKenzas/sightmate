@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sightmate/core/service/speech_service.dart';
+import 'package:sightmate/features/scene_description/data/scene_description_service.dart';
 import 'package:sightmate/features/speech/domains/speech_message.dart';
 
 import '../../../components/camera_icon_button.dart';
@@ -19,6 +20,13 @@ class _CameraScreenState extends State<CameraScreen>
   CameraController? _controller;
   List<CameraDescription> _cameras = [];
   final SpeechService _speechService = SpeechService.instance;
+
+  final SceneDescriptionService _sceneService = SceneDescriptionService();
+
+  bool _analyzing = false;
+  String? _sceneDescription;
+  bool _isMock = false;
+  String? _analysisError;
 
   XFile? _photo;
   String? _error;
@@ -130,11 +138,76 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  Future<void> _analyzePhoto() async {
+    final photo = _photo;
+
+    if (photo == null || _analyzing) return;
+
+    setState(() {
+      _analyzing = true;
+      _sceneDescription = null;
+      _analysisError = null;
+      _isMock = false;
+    });
+
+    try {
+      await _speechService.initialize();
+
+      final language = _speechService.language.code;
+
+      final result = await _sceneService.describe(
+        imagePath: photo.path,
+        language: language,
+      );
+
+      if (!mounted || _photo?.path != photo.path) return;
+
+      setState(() {
+        _sceneDescription = result.description;
+        _isMock = result.isMock;
+      });
+
+      final spokenText = result.isMock
+          ? (language == 'fr-FR'
+                ? 'Mode démonstration. ${result.description}'
+                : 'Demo mode. ${result.description}')
+          : result.description;
+
+      await _speechService.speak(spokenText);
+    } catch (error) {
+      debugPrint('Scene description error: $error');
+
+      if (!mounted || _photo?.path != photo.path) return;
+
+      final message = _speechService.language.code == 'fr-FR'
+          ? 'Impossible de contacter le serveur.'
+          : 'Unable to contact the server.';
+
+      setState(() => _analysisError = message);
+
+      try {
+        await _speechService.speak(message);
+      } catch (speechError) {
+        debugPrint('TTS error: $speechError');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _analyzing = false);
+      }
+    }
+  }
+
   Future<void> _capture() async {
     // Lorsque la photo est déjà affichée,
     // permettre de revenir à la caméra.
+    if (_analyzing) return;
     if (_photo != null) {
-      setState(() => _photo = null);
+      setState(() {
+        _photo = null;
+        _sceneDescription = null;
+        _analysisError = null;
+        _isMock = false;
+      });
       return;
     }
 
@@ -384,6 +457,10 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  String _localized(String french, String english) {
+    return _speechService.language.code == 'en-US' ? english : french;
+  }
+
   Widget _buildInfoPanel() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -396,9 +473,15 @@ class _CameraScreenState extends State<CameraScreen>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _photo == null ? 'Décrire mon environnement' : 'Image capturée',
+              _photo == null
+                  ? _localized(
+                      'Décrire mon environnement',
+                      'Describe my surroundings',
+                    )
+                  : _localized('Image capturée', 'Image captured'),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 19,
@@ -408,16 +491,73 @@ class _CameraScreenState extends State<CameraScreen>
             const SizedBox(height: 8),
             Text(
               _photo == null
-                  ? 'Orientez la caméra vers votre environnement.'
-                  : 'Photo prête. L’analyse IA sera intégrée '
-                        'dans la prochaine étape.',
+                  ? _localized(
+                      'Orientez la caméra vers votre environnement.',
+                      'Point the camera toward your surroundings.',
+                    )
+                  : _localized(
+                      'Photo prête. Lancez une analyse pour tester le serveur.',
+                      'Photo ready. Analyze it to test the server.',
+                    ),
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'L’analyse automatique n’est pas encore active.',
-              style: TextStyle(color: Color(0xFFBBDEFB), fontSize: 12),
-            ),
+            if (_photo == null)
+              Text(
+                _localized(
+                  'Le modèle IA réel n’est pas encore actif.',
+                  'The real AI model is not active yet.',
+                ),
+                style: const TextStyle(color: Color(0xFFBBDEFB), fontSize: 12),
+              ),
+            if (_photo != null) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _analyzing ? null : _analyzePhoto,
+                  icon: _analyzing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome),
+                  label: Text(
+                    _analyzing
+                        ? _localized('Analyse en cours...', 'Analyzing...')
+                        : _localized('Analyser la photo', 'Analyze photo'),
+                  ),
+                ),
+              ),
+              if (_sceneDescription != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _sceneDescription!,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                if (_isMock) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _localized(
+                      'Mode démonstration — aucune analyse IA réelle.',
+                      'Demo mode — no real AI analysis.',
+                    ),
+                    style: const TextStyle(
+                      color: Colors.amberAccent,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+              if (_analysisError != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _analysisError!,
+                  style: const TextStyle(color: Colors.orangeAccent),
+                ),
+              ],
+            ],
           ],
         ),
       ),
@@ -448,7 +588,7 @@ class _CameraScreenState extends State<CameraScreen>
             button: true,
             label: _photo == null ? 'Prendre une photo' : 'Reprendre une photo',
             child: GestureDetector(
-              onTap: _loading || _capturing ? null : _capture,
+              onTap: _loading || _capturing || _analyzing ? null : _capture,
               child: Container(
                 width: 78,
                 height: 78,

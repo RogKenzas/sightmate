@@ -41,6 +41,8 @@ dependencies:
   camera_platform_interface: ^2.15.0
   flutter_tts: ^4.2.5
   shared_preferences: ^2.5.6
+  dio: ^5.11.1
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:
