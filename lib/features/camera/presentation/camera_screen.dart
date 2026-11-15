@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -40,8 +39,7 @@ class _CameraScreenState extends State<CameraScreen>
 
       _cameras = cameras;
       final rearIndex = cameras.indexWhere(
-        (camera) =>
-            camera.lensDirection == CameraLensDirection.back,
+        (camera) => camera.lensDirection == CameraLensDirection.back,
       );
       _cameraIndex = rearIndex < 0 ? 0 : rearIndex;
 
@@ -130,9 +128,7 @@ class _CameraScreenState extends State<CameraScreen>
     }
 
     final camera = _controller;
-    if (camera == null ||
-        !camera.value.isInitialized ||
-        _capturing) {
+    if (camera == null || !camera.value.isInitialized || _capturing) {
       return;
     }
 
@@ -157,9 +153,7 @@ class _CameraScreenState extends State<CameraScreen>
     final camera = _controller;
     if (camera == null || !camera.value.isInitialized) return;
 
-    final next = _flashMode == FlashMode.off
-        ? FlashMode.torch
-        : FlashMode.off;
+    final next = _flashMode == FlashMode.off ? FlashMode.torch : FlashMode.off;
 
     try {
       await camera.setFlashMode(next);
@@ -181,9 +175,9 @@ class _CameraScreenState extends State<CameraScreen>
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -239,11 +233,7 @@ class _CameraScreenState extends State<CameraScreen>
           ),
 
           // Zone de cadrage au centre de l'écran.
-          const Center(
-            child: IgnorePointer(
-              child: _ScanFrame(),
-            ),
-          ),
+          const Center(child: IgnorePointer(child: _ScanFrame())),
 
           SafeArea(
             child: Column(
@@ -266,16 +256,11 @@ class _CameraScreenState extends State<CameraScreen>
 
   Widget _buildPreview() {
     if (_photo != null) {
-      return Image.file(
-        File(_photo!.path),
-        fit: BoxFit.cover,
-      );
+      return Image.file(File(_photo!.path), fit: BoxFit.cover);
     }
 
     final camera = _controller;
-    if (camera == null ||
-        !camera.value.isInitialized ||
-        _loading) {
+    if (camera == null || !camera.value.isInitialized || _loading) {
       return Center(
         child: _error == null
             ? const CircularProgressIndicator()
@@ -332,9 +317,7 @@ class _CameraScreenState extends State<CameraScreen>
             tooltip: _flashMode == FlashMode.off
                 ? 'Activer le flash'
                 : 'Désactiver le flash',
-            onPressed: _loading || _photo != null
-                ? null
-                : _toggleFlash,
+            onPressed: _loading || _photo != null ? null : _toggleFlash,
           ),
         ],
       ),
@@ -342,15 +325,10 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   Widget _buildStatusBadge() {
-    final text = _photo == null
-        ? 'Caméra prête à capturer'
-        : 'Photo capturée';
+    final text = _photo == null ? 'Caméra prête à capturer' : 'Photo capturée';
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(24),
@@ -380,9 +358,7 @@ class _CameraScreenState extends State<CameraScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _photo == null
-                  ? 'Décrire mon environnement'
-                  : 'Image capturée',
+              _photo == null ? 'Décrire mon environnement' : 'Image capturée',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 19,
@@ -394,19 +370,13 @@ class _CameraScreenState extends State<CameraScreen>
               _photo == null
                   ? 'Orientez la caméra vers votre environnement.'
                   : 'Photo prête. L’analyse IA sera intégrée '
-                    'dans la prochaine étape.',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+                        'dans la prochaine étape.',
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 12),
             const Text(
               'L’analyse automatique n’est pas encore active.',
-              style: TextStyle(
-                color: Color(0xFFBBDEFB),
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Color(0xFFBBDEFB), fontSize: 12),
             ),
           ],
         ),
@@ -431,17 +401,12 @@ class _CameraScreenState extends State<CameraScreen>
                   )
                 : ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.file(
-                      File(_photo!.path),
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.file(File(_photo!.path), fit: BoxFit.cover),
                   ),
           ),
           Semantics(
             button: true,
-            label: _photo == null
-                ? 'Prendre une photo'
-                : 'Reprendre une photo',
+            label: _photo == null ? 'Prendre une photo' : 'Reprendre une photo',
             child: GestureDetector(
               onTap: _loading || _capturing ? null : _capture,
               child: Container(
@@ -450,10 +415,7 @@ class _CameraScreenState extends State<CameraScreen>
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 3,
-                  ),
+                  border: Border.all(color: Colors.white, width: 3),
                 ),
                 child: Container(
                   decoration: const BoxDecoration(
@@ -466,12 +428,8 @@ class _CameraScreenState extends State<CameraScreen>
                           child: CircularProgressIndicator(),
                         )
                       : _photo != null
-                          ? const Icon(
-                              Icons.refresh,
-                              color: Colors.black,
-                              size: 30,
-                            )
-                          : null,
+                      ? const Icon(Icons.refresh, color: Colors.black, size: 30)
+                      : null,
                 ),
               ),
             ),
@@ -502,9 +460,7 @@ class _ScanFrame extends StatelessWidget {
     return SizedBox(
       width: 280,
       height: 280,
-      child: CustomPaint(
-        painter: _ScanFramePainter(),
-      ),
+      child: CustomPaint(painter: _ScanFramePainter()),
     );
   }
 }
@@ -526,12 +482,10 @@ class _ScanFramePainter extends CustomPainter {
       ..lineTo(0, radius)
       ..quadraticBezierTo(0, 0, radius, 0)
       ..lineTo(length, 0)
-
       ..moveTo(size.width - length, 0)
       ..lineTo(size.width - radius, 0)
       ..quadraticBezierTo(size.width, 0, size.width, radius)
       ..lineTo(size.width, length)
-
       ..moveTo(size.width, size.height - length)
       ..lineTo(size.width, size.height - radius)
       ..quadraticBezierTo(
@@ -541,15 +495,9 @@ class _ScanFramePainter extends CustomPainter {
         size.height,
       )
       ..lineTo(size.width - length, size.height)
-
       ..moveTo(length, size.height)
       ..lineTo(radius, size.height)
-      ..quadraticBezierTo(
-        0,
-        size.height,
-        0,
-        size.height - radius,
-      )
+      ..quadraticBezierTo(0, size.height, 0, size.height - radius)
       ..lineTo(0, size.height - length);
 
     canvas.drawPath(path, paint);

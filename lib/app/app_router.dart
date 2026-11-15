@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:sightmate/features/speech/presentations/speech_test_screen.dart';
 
 import '../features/home/presentation/home_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -24,6 +25,11 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/speech-test',
+        name: 'speech-test',
+        builder: (context, state) => const SpeechTestScreen(),
       ),
     ],
   );

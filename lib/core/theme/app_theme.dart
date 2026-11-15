@@ -1,4 +1,3 @@
-
 import 'package:material_ui/material_ui.dart';
 
 class AppTheme {
@@ -9,15 +8,16 @@ class AppTheme {
     const surface = Color(0xFF26364A);
     const primary = Color(0xFF93C5FD);
 
-    final scheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: primary,
-      onPrimary: background,
-      surface: background,
-      onSurface: Colors.white,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: primary,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: primary,
+          onPrimary: background,
+          surface: background,
+          onSurface: Colors.white,
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -31,9 +31,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
